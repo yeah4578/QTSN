@@ -1,0 +1,8 @@
+org 0
+	ld a,0x4f
+initIO:
+	ld (0x2000),a
+	ld (0xe000),a
+
+
+ds 0x4000-$
