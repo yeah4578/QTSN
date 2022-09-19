@@ -3,9 +3,13 @@
 #include "state.h"
 #include "raylib.h"
 
-int disPixel(vpState *state){
+Color getPixelColor(vpState *state){
 	Color color = {10,20,30};
-	DrawPixel(state->xpixel,state->ypixel+8,color);
+	return color;
+}
+
+int disPixel(vpState *state){
+	DrawPixel(state->xpixel,state->ypixel+8,getPixelColor(state));
 	return 0;
 }
 

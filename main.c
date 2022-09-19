@@ -12,11 +12,24 @@ float xScale = 2;
 float yScale = 2;
 int screenWidth = canvasWidth*xScale;
 int screenHeight = canvasHeight*yScale;
+bool mouseWithinRect(int lowx, int lowy, int highx, int highy){
+	int mouseX = GetMouseX();
+	int mouseY = GetMouseY();
+	if(xScale>yScale){
+		mouseX -= (screenWidth/yScale/2-canvasWidth/2);
+	}else
+		mouseY -= (screenHeight/xScale/2-canvasHeight/2);
+	if(mouseX<lowx||mouseX>=highx||mouseY<lowy||mouseY>=highy)
+		return false;
+	return true;
+}
 
 void DisplayMenuBar(){
-	DrawTextEx(FourBySix,"Load",(Vector2){0,0},6,1,WHITE);
-	DrawTextEx(FourBySix,"Save",(Vector2){32,0},6,1,WHITE);
-	DrawTextEx(FourBySix,"Options",(Vector2){64,0},6,1,WHITE);
+	DrawTextEx(FourBySix,"Load",(Vector2){0,0},6,1,mouseWithinRect(0,0,19,8)?BLUE:WHITE);
+	DrawTextEx(FourBySix,"Save",(Vector2){32,0},6,1,mouseWithinRect(32,0,51,8)?BLUE:WHITE);
+	DrawTextEx(FourBySix,"Options",(Vector2){64,0},6,1,mouseWithinRect(64,0,98,8)?BLUE:WHITE);
+	DrawTextEx(FourBySix,"QTSN ver.0",(Vector2){206,0},6,1,DARKGRAY);
+	DrawLine(0,7,255,7,DARKGRAY);
 }
 
 void RunFrame(){
@@ -38,7 +51,7 @@ int loadPRG(uint8_t* rom, std::string filename){
 }
 
 void initializeWindow(){
-	InitWindow(screenWidth,screenHeight,"amiongus");
+	InitWindow(screenWidth,screenHeight,"QTSN");
 	SetTargetFPS(60);
 	SetWindowState(FLAG_WINDOW_RESIZABLE);
 	ClearBackground(BLACK);
