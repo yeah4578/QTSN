@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "state.h"
-void clockVP(vpState *);
 
 Z80EX_BYTE mread(Z80EX_CONTEXT *cpu, Z80EX_WORD addr, int m1_state, void *user_data){
 	cpuState* state = (cpuState*)user_data;
@@ -34,7 +33,7 @@ Z80EX_BYTE intread(Z80EX_CONTEXT *cpu, void *user_data){
 
 void onClock(Z80EX_CONTEXT *cpu, void *user_data){
 	cpuState* state = (cpuState*)user_data;
-	clockVP(state->vp);
+	state->vp->clock();
 }
 
 

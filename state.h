@@ -2,29 +2,23 @@
 #include <z80ex/z80ex.h>
 
 class vpState{
-public:
-	uint8_t* vram,*sprite,*palette;
+private:
+	uint8_t *sprite,*palette;
 	uint8_t apixelbuffer[4],bpixelbuffer[4];
 	uint8_t aXscroll,aYscroll,bXscroll,bYscroll;
 
-	uint8_t pixeloutof8;
-	uint8_t xpixel,ypixel;
+	int pixeloutof8;
+	uint16_t xpixel;
+	uint16_t ypixel;
 	uint8_t tID[2];
-
-
-
+	uint8_t attr[4];
+public:
+	uint8_t *vram;
 	int memblocked;//set if cpu or dmc is accessing memory; reads 0 if data is accessed
-	vpState(){
-		sprite = new uint8_t[512];
-		palette = new uint8_t[64];
-		xpixel,ypixel = 0;
-		pixeloutof8 = 0;
-	}
-
-	~vpState(){
-		delete sprite;
-		delete palette;
-	}
+	vpState();
+	~vpState();
+	void clock();
+	void writeReg();
 };
 
 typedef struct{
@@ -43,20 +37,13 @@ void onClock(Z80EX_CONTEXT *cpu, void *user_data);
 class cpuState	{
 public:
 	uint8_t* memory;
+	int overCycle;
 	Z80EX_CONTEXT* context;
 	vpState* vp;
 	dmcState* dmc;
 	sndState* snd;
 
-	cpuState(){
-		memory = new uint8_t[0x10000];
-		context = z80ex_create(mread,this,mwrite,this,pread,this,pwrite,this,intread,this);
-		z80ex_set_tstate_callback(context,onClock,this);
-	}
-
-	~cpuState(){
-		delete memory;
-		z80ex_destroy(context);
-	}
+	cpuState();
+	~cpuState();
 };
 

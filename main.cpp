@@ -1,5 +1,6 @@
 #include "state.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <z80ex/z80ex.h>
 #include <string>
 #include "raylib.h"
@@ -7,34 +8,42 @@
 Font FourBySix;
 RenderTexture2D target;
 const int canvasWidth = 256;
-const int canvasHeight = 256;
+const int canvasHeight = 248;
 float xScale = 2;
 float yScale = 2;
 int screenWidth = canvasWidth*xScale;
 int screenHeight = canvasHeight*yScale;
-bool mouseWithinRect(int lowx, int lowy, int highx, int highy){
-	int mouseX = GetMouseX();
-	int mouseY = GetMouseY();
-	if(xScale>yScale){
-		mouseX -= (screenWidth/yScale/2-canvasWidth/2);
-	}else
-		mouseY -= (screenHeight/xScale/2-canvasHeight/2);
-	if(mouseX<lowx||mouseX>=highx||mouseY<lowy||mouseY>=highy)
-		return false;
-	return true;
+int framecount = 0;
+
+bool mouseWithinRect(float x, float y, float width, float height){
+	float mouseX = GetMouseX();
+	float mouseY = GetMouseY();
+	mouseX -= (screenWidth/yScale-canvasWidth)*0.5f;
+	mouseY -= (screenHeight/xScale-canvasHeight)*0.5f;
+	return CheckCollisionPointRec({mouseX,mouseY},{x,y,width,height});
 }
 
 void DisplayMenuBar(){
 	DrawTextEx(FourBySix,"Load",(Vector2){0,0},6,1,mouseWithinRect(0,0,19,8)?BLUE:WHITE);
-	DrawTextEx(FourBySix,"Save",(Vector2){32,0},6,1,mouseWithinRect(32,0,51,8)?BLUE:WHITE);
-	DrawTextEx(FourBySix,"Options",(Vector2){64,0},6,1,mouseWithinRect(64,0,98,8)?BLUE:WHITE);
-	DrawTextEx(FourBySix,"QTSN ver.0",(Vector2){206,0},6,1,DARKGRAY);
+	DrawTextEx(FourBySix,"Save",(Vector2){32,0},6,1,mouseWithinRect(32,0,19,8)?BLUE:WHITE);
+	DrawTextEx(FourBySix,"Options",(Vector2){64,0},6,1,mouseWithinRect(64,0,35,8)?BLUE:WHITE);
+	DrawTextEx(FourBySix,"QTSN ver.0 ",(Vector2){201,0},6,1,DARKGRAY);
+	DrawTextEx(FourBySix,TextFormat("%08d", framecount++),(Vector2){101,0},6,1,DARKGRAY);
+	DrawTextEx(FourBySix,TextFormat("%d", GetFPS()),(Vector2){151,0},6,1,DARKGRAY);
 	DrawLine(0,7,255,7,DARKGRAY);
 }
 
-void RunFrame(){
 
+int RunScanline(cpuState *state){
+	int i = state->overCycle;
+	for(;i<341;)
+		i += z80ex_step(state->context);
+	return i-341;
+}
 
+void RunFrame(cpuState *state){
+	for(int i=0;i<262;i++)
+		state->overCycle = RunScanline(state);
 }
 
 
@@ -62,14 +71,8 @@ void initializeWindow(){
 }
 
 int main(){
-	vpState VP;
-	dmcState DMC;
-	sndState SND;
 	cpuState CPU;
-	CPU.vp = &VP;
-	CPU.dmc = &DMC;
-	CPU.snd = &SND;
-	VP.vram = CPU.memory+0xc000;
+	CPU.vp->vram = CPU.memory+0xc000;
 	if(loadPRG(CPU.memory, "boot.bin")==-1){
 		return -1;
 	}
@@ -79,29 +82,30 @@ int main(){
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
 		if(IsWindowResized()){
-			ClearBackground(DARKGRAY);
+			ClearBackground(BLACK);
 			screenHeight = GetScreenHeight();
 			screenWidth = GetScreenWidth();
 			yScale=(float)screenHeight/canvasHeight;
 			xScale=(float)screenWidth/canvasWidth;
 			if(xScale>yScale)
-				SetMouseScale(1/yScale,1/yScale);
+				xScale=yScale;
 			else
-				SetMouseScale(1/xScale,1/xScale);
+				yScale=xScale;
+			SetMouseScale(1/xScale,1/yScale);
+
 		}
 		BeginTextureMode(target);
-		ClearBackground(BLACK);
-		DisplayMenuBar();
-// 		RunFrame();
+			ClearBackground(BLACK);
+			DisplayMenuBar();
+			RunFrame(&CPU);
 		EndTextureMode();
 
 		BeginDrawing();
 		DrawTexturePro(target.texture,
-			       Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },
-			       xScale>yScale
-			       ?Rectangle{screenWidth/2-canvasWidth/2*yScale,0,canvasWidth*yScale,(float)screenHeight}
-			       :Rectangle{0,screenHeight/2-canvasHeight/2*xScale,(float)screenWidth,canvasHeight*xScale},
-			       Vector2{}, 0, WHITE);
+			Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },
+			Rectangle{(screenWidth-canvasWidth*yScale)*0.5f,(screenHeight-canvasHeight*xScale)*0.5f,
+				canvasWidth*xScale,canvasHeight*yScale},
+			Vector2{}, 0, WHITE);
 		EndDrawing();
 	}
 }

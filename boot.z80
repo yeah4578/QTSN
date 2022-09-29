@@ -1,8 +1,10 @@
 org 0
-	ld a,0x4f
+	ld a,0x03
+	ld hl,0xc000
 initIO:
-	ld (0x2000),a
-	ld (0xe000),a
+	ld (hl),a
+	inc a
+	jr initIO
 
 
 ds 0x4000-$
