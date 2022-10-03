@@ -1,3 +1,4 @@
+#include "raylib.h"
 #include <stdint.h>
 #include <z80ex/z80ex.h>
 
@@ -12,6 +13,10 @@ private:
 	uint16_t ypixel;
 	uint8_t tID[2];
 	uint8_t attr[4];
+
+	Color getPixelColor();
+	int disPixel();
+	void readByte();
 public:
 	uint8_t *vram;
 	int memblocked;//set if cpu or dmc is accessing memory; reads 0 if data is accessed
@@ -21,10 +26,31 @@ public:
 	void writeReg();
 };
 
-typedef struct{
+class dmcState{
+	uint16_t dmabuffer[32];//buffer space for 8 DMA commands
+	uint8_t aiobuffer[32];//buffer space for 16 AIO commands
+	uint16_t IRQreload;//value to put into IRQtmr after it hits zero
+	uint16_t IRQtmr;
+	uint8_t IRQctrl;
+
+
+	uint8_t byteCount;//counter for AIO or DMA bytes written
+
+	void genIRQ();
+	void clockDMA();
+	void clockAIO();
+	void clockTimer();
+
 public:
+	dmcState();
+	~dmcState();
+	void clock();
+	void writeIO(int port, uint8_t value);
+};
+
+typedef struct{
 	uint8_t test;
-}dmcState,sndState;
+}sndState;
 
 
 Z80EX_BYTE mread(Z80EX_CONTEXT *cpu, Z80EX_WORD addr, int m1_state, void *user_data);
@@ -38,12 +64,16 @@ class cpuState	{
 public:
 	uint8_t* memory;
 	int overCycle;
+	vpState *vp;
 	Z80EX_CONTEXT* context;
-	vpState* vp;
-	dmcState* dmc;
-	sndState* snd;
-
+	void interrupt();
 	cpuState();
 	~cpuState();
 };
 
+typedef struct{
+	vpState VP;
+	cpuState CPU;
+	dmcState DMC;
+	sndState SND;
+}sysContainer;

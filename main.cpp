@@ -15,6 +15,11 @@ int screenWidth = canvasWidth*xScale;
 int screenHeight = canvasHeight*yScale;
 int framecount = 0;
 
+void onClock(Z80EX_CONTEXT *cpu, void *user_data){
+	cpuState* state = (cpuState*)user_data;
+	state->vp->clock();
+}
+
 bool mouseWithinRect(float x, float y, float width, float height){
 	float mouseX = GetMouseX();
 	float mouseY = GetMouseY();
@@ -36,8 +41,9 @@ void DisplayMenuBar(){
 
 int RunScanline(cpuState *state){
 	int i = state->overCycle;
-	for(;i<341;)
+	for(;i<341;){
 		i += z80ex_step(state->context);
+	}
 	return i-341;
 }
 
@@ -72,7 +78,11 @@ void initializeWindow(){
 
 int main(){
 	cpuState CPU;
-	CPU.vp->vram = CPU.memory+0xc000;
+	vpState VPU;
+	dmcState DMC;
+	sndState SND;
+	CPU.vp = &VPU;
+	VPU.vram = CPU.memory+0xc000;
 	if(loadPRG(CPU.memory, "boot.bin")==-1){
 		return -1;
 	}
